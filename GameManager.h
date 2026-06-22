@@ -12,12 +12,15 @@
 #include <new>
 
 enum GameID : uint8_t {
-  GAME_META_TTT    = 0,
-  GAME_TETRIS      = 1,
-  GAME_CHESS       = 2,
-  GAME_BLOCKPUZZLE = 3,
-  GAME_SNAKE       = 4,
-  GAME_COUNT       = 5
+  GAME_META_TTT      = 0,
+  GAME_TETRIS        = 1,
+  GAME_CHESS         = 2,   // Normal
+  GAME_CHESS_ANTI    = 3,   // Antichess
+  GAME_CHESS_3CHECK  = 4,   // Three-Check
+  GAME_CHESS_CRAZY   = 5,   // Crazyhouse
+  GAME_BLOCKPUZZLE   = 6,
+  GAME_SNAKE         = 7,
+  GAME_COUNT         = 8
 };
 
 union GameBuffer {

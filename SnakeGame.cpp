@@ -9,27 +9,34 @@ uint32_t SnakeGame::_color(uint8_t idx) {
   return pgm_read_dword(&_colors[idx]);
 }
 
-// Seed als Instanzvariable — kein static → kein Reset-Bug
 uint16_t SnakeGame::_rng() {
-  _seed = _seed * 6364 + 1;
+  // Xorshift — bessere Streuung als LCG
+  _seed ^= _seed << 7;
+  _seed ^= _seed >> 9;
+  _seed ^= _seed << 8;
   return _seed;
 }
 
 SnakeGame::SnakeGame() { reset(); }
 
 void SnakeGame::reset() {
-  _gameOver    = false;
+  _gameOver     = false;
   _gameOverAnim = 0;
-  _len         = 3;
+  _len          = 3;
   _dr = 0; _dc = 1;
   _nextDr = 0; _nextDc = 1;
-  _moveTimer   = 6;
-  _moveCount   = 0;
-  _grew        = false;
-  _foodCount   = 0;
-  _spawnTimer  = 0;
-  // Seed aus Timer → jedes Spiel anders
-  _seed = (uint16_t)(millis() & 0xFFFF) | 1;
+  _moveTimer    = 6;
+  _moveCount    = 0;
+  _grew         = false;
+  _foodCount    = 0;
+  _spawnTimer   = 0;
+
+  // Seed: millis() XOR mit analogen Rauschwerten → gute Streuung
+  uint16_t s = (uint16_t)millis();
+  s ^= (uint16_t)analogRead(A2) << 3;
+  s ^= (uint16_t)analogRead(A3) << 1;
+  if (s == 0) s = 0xABCD;
+  _seed = s;
 
   for (uint8_t i = 0; i < SNAKE_MAX_FOOD; i++) {
     _foodActive[i] = false;
@@ -42,8 +49,11 @@ void SnakeGame::reset() {
   _body[1][0] = startRow; _body[1][1] = startCol - 1;
   _body[2][0] = startRow; _body[2][1] = startCol - 2;
 
-  // Starte sofort mit SNAKE_MIN_FOOD Aepfeln
-  for (uint8_t i = 0; i < SNAKE_MIN_FOOD; i++) _spawnFood();
+  // Startäpfel — genug RNG-Runden damit sie sich verteilen
+  for (uint8_t i = 0; i < SNAKE_MIN_FOOD; i++) {
+    _rng(); _rng();  // extra Runden für bessere Streuung
+    _spawnFood();
+  }
 }
 
 bool SnakeGame::_onSnake(int8_t r, int8_t c) {
@@ -65,14 +75,27 @@ void SnakeGame::_spawnFood() {
   for (uint8_t i = 0; i < SNAKE_MAX_FOOD; i++)
     if (!_foodActive[i]) { slot = i; break; }
 
+  // Spielfeld in 3 Zonen aufteilen, Apfel in zufälliger Zone platzieren
+  // → verhindert Häufung an einer Stelle
+  uint8_t zone = _rng() % 3;
+  int8_t  zoneRowStart = SNAKE_ROW_MIN + zone * 5;
+  int8_t  zoneRowEnd   = zoneRowStart + 4;
+  if (zoneRowEnd > SNAKE_ROW_MAX) zoneRowEnd = SNAKE_ROW_MAX;
+
   int8_t r, c;
   uint8_t tries = 0;
   do {
-    r = SNAKE_ROW_MIN + (_rng() >> 4) % (SNAKE_ROW_MAX - SNAKE_ROW_MIN + 1);
-    c = SNAKE_COL_MIN + (_rng() >> 4) % (SNAKE_COL_MAX - SNAKE_COL_MIN + 1);
+    uint16_t rn = _rng();
+    r = zoneRowStart + (rn >> 4) % (zoneRowEnd - zoneRowStart + 1);
+    c = SNAKE_COL_MIN + (_rng() >> 3) % (SNAKE_COL_MAX - SNAKE_COL_MIN + 1);
     tries++;
-    // Abbruch nach 99 Versuchen (tries==100 würde noch einmal testen)
-  } while (tries < 99 && (_onSnake(r, c) || _onFood(r, c)));
+    if (tries > 40) {
+      // Zone aufgeben, überall spawnen
+      r = SNAKE_ROW_MIN + (_rng() >> 4) % (SNAKE_ROW_MAX - SNAKE_ROW_MIN + 1);
+      c = SNAKE_COL_MIN + (_rng() >> 4) % (SNAKE_COL_MAX - SNAKE_COL_MIN + 1);
+      tries++;
+    }
+  } while (tries < 80 && (_onSnake(r, c) || _onFood(r, c)));
 
   _food[slot][0]    = r;
   _food[slot][1]    = c;
@@ -83,15 +106,14 @@ void SnakeGame::_spawnFood() {
 void SnakeGame::handleInput(int8_t dx, int8_t dy, bool /*btn*/) {
   if (_gameOver) return;
 
-  if (dy == -1 && _dr != 1)  { _nextDr=-1; _nextDc= 0; }
+  if (dy == -1 && _dr !=  1) { _nextDr=-1; _nextDc= 0; }
   if (dy ==  1 && _dr != -1) { _nextDr= 1; _nextDc= 0; }
-  if (dx == -1 && _dc != 1)  { _nextDr= 0; _nextDc=-1; }
+  if (dx == -1 && _dc !=  1) { _nextDr= 0; _nextDc=-1; }
   if (dx ==  1 && _dc != -1) { _nextDr= 0; _nextDc= 1; }
 
   _moveCount++;
   if (_moveCount >= _moveTimer) { _moveCount = 0; _step(); }
 
-  // Apfel-Spawn-Timer
   if (_foodCount < SNAKE_MAX_FOOD) {
     _spawnTimer++;
     if (_spawnTimer >= SNAKE_FOOD_SPAWN_TICKS) { _spawnTimer = 0; _spawnFood(); }
@@ -105,11 +127,8 @@ void SnakeGame::_step() {
   int8_t newRow = _body[0][0] + _dr;
   int8_t newCol = _body[0][1] + _dc;
 
-  // Wrap oben/unten
   if (newRow < SNAKE_ROW_MIN) newRow = SNAKE_ROW_MAX;
   if (newRow > SNAKE_ROW_MAX) newRow = SNAKE_ROW_MIN;
-
-  // Wand links/rechts = Tod
   if (newCol < SNAKE_COL_MIN || newCol > SNAKE_COL_MAX) { _gameOver = true; return; }
 
   uint8_t moveLen = _grew ? _len : _len - 1;
@@ -133,7 +152,6 @@ void SnakeGame::_step() {
       _foodActive[i] = false;
       _foodCount--;
       _food[i][0] = -1; _food[i][1] = -1;
-      // Sofort nachspawnen wenn unter Minimum
       if (_foodCount < SNAKE_MIN_FOOD) _spawnFood();
       break;
     }
@@ -149,30 +167,26 @@ bool SnakeGame::_selfCollision() {
 void SnakeGame::draw(LEDMatrix& matrix) {
   matrix.clear();
 
-  // Waende
   for (int r = 0; r < MATRIX_ROWS; r++) {
     matrix.setPixel(r, 0,             _color(C_WALL));
     matrix.setPixel(r, MATRIX_COLS-1, _color(C_WALL));
   }
 
-  // Aepfel
   for (uint8_t i = 0; i < SNAKE_MAX_FOOD; i++) {
     if (!_foodActive[i]) continue;
     matrix.setPixel(_food[i][0], _food[i][1],
                     _color((i % 2 == 0) ? C_FOOD : C_FOOD2));
   }
 
-  // Schlange
   for (uint8_t i = _len - 1; i > 0; i--)
     matrix.setPixel(_body[i][0], _body[i][1], _color(C_BODY));
   matrix.setPixel(_body[0][0], _body[0][1], _color(C_HEAD));
 
-  // Verlier-Animation: Schlange segmentweise von hinten rot/dunkel
   if (_gameOver) {
     if (_gameOverAnim < _len) _gameOverAnim++;
     for (uint8_t i = 0; i < _gameOverAnim; i++) {
       uint32_t col = (i % 2 == 0) ? 0x440000 : 0x200000;
-      matrix.setPixel(_body[_len - 1 - i][0], _body[_len - 1 - i][1], col);
+      matrix.setPixel(_body[_len-1-i][0], _body[_len-1-i][1], col);
     }
   }
 
