@@ -38,6 +38,7 @@ class ChessGame : public IGame {
   public:
     ChessGame();
     void reset()                                      override;
+    void setMode(uint8_t mode) { _mode = mode; }
     void handleInput(int8_t dx, int8_t dy, bool btn) override;
     void draw(LEDMatrix& matrix)                      override;
     bool isOver() const                               override;

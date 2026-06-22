@@ -70,11 +70,8 @@ void GameManager::_unloadGame() {
 void GameManager::resetCurrentGame() {
   if (_playing && _game != nullptr) {
     _game->reset();
-  } else {
-    _menuCursor    = 0;
-    _scrollTarget  = 0;
-    _scrollCurrent = 0;
   }
+  // Im Menü: nichts tun — Reset macht nur im laufenden Spiel Sinn
 }
 
 void GameManager::_drawIcon(uint8_t idx, int8_t cc) {

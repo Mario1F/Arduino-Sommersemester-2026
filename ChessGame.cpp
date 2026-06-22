@@ -1,5 +1,6 @@
 #include "ChessGame.h"
 #include <string.h>
+#include <new>
 
 const uint32_t ChessGame::_colors[16] PROGMEM = {
   0x1A1208, 0x0A0804, 0x000000, 0x000000,
@@ -42,10 +43,10 @@ void ChessGame::reset() {
 }
 
 // Modus-Setter (von außen aufgerufen nach Konstruktor)
-ChessGame* newChessNormal(void* buf)     { auto* g=new(buf) ChessGame(); g->_mode=0; return g; }
-ChessGame* newChessAntichess(void* buf)  { auto* g=new(buf) ChessGame(); g->_mode=1; return g; }
-ChessGame* newChessThreeCheck(void* buf) { auto* g=new(buf) ChessGame(); g->_mode=2; return g; }
-ChessGame* newCrazyhouse(void* buf)      { auto* g=new(buf) ChessGame(); g->_mode=3; return g; }
+ChessGame* newChessNormal(void* buf)     { auto* g=new(buf) ChessGame(); g->setMode(0); return g; }
+ChessGame* newChessAntichess(void* buf)  { auto* g=new(buf) ChessGame(); g->setMode(1); return g; }
+ChessGame* newChessThreeCheck(void* buf) { auto* g=new(buf) ChessGame(); g->setMode(2); return g; }
+ChessGame* newCrazyhouse(void* buf)      { auto* g=new(buf) ChessGame(); g->setMode(3); return g; }
 
 // ── Bewegungslogik ────────────────────────────────────────────
 
@@ -108,7 +109,9 @@ bool ChessGame::_canCastle(uint8_t side) {
   // Gegner-Farbe
   uint8_t opp = (side&(CR_W_KING|CR_W_QUEEN)) ? 1 : 0;
   // Prüfe ob König-Startfeld, Zwischenfeld, Zielfeld angegriffen
-  for(uint8_t c : {kc,kc1,kc2}) {
+  uint8_t checkCols[3] = {kc, kc1, kc2};
+  for(uint8_t ci=0; ci<3; ci++) {
+    uint8_t c = checkCols[ci];
     for(int8_t r2=0;r2<8;r2++) for(int8_t c2=0;c2<8;c2++) {
       uint8_t f=_board[r2][c2];
       if(f==CH_EMPTY||CH_COLOR(f)!=opp) continue;
