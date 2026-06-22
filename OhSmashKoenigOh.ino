@@ -7,12 +7,10 @@
 #define JOY_X          A0
 #define JOY_Y          A1
 #define JOY_BTN        7
-#define RESET_BTN      2    // D2: Reset-Taster (doppelt drücken in 5s)
+#define RESET_BTN      2
 #define JOY_DEADZONE   200
 #define JOY_DELAY_MS   400
 #define JOY_REPEAT_MS  180
-
-// Doppelklick-Reset: zwei Drücke innerhalb RESET_WINDOW_MS = Neustart
 #define RESET_WINDOW_MS 5000
 
 LEDMatrix   matrix(LED_PIN, LED_BRIGHTNESS);
@@ -22,8 +20,10 @@ bool     btnLast      = false;
 uint32_t lastMoveTime = 0;
 bool     firstMove    = true;
 
-// Reset-Taster Zustand
+// Reset-Taster D2 — mit Hardware-Entprellung (50ms)
 bool     resetBtnLast    = false;
+bool     resetBtnStable  = false;
+uint32_t resetDebounceMs = 0;
 uint8_t  resetClickCount = 0;
 uint32_t resetFirstClick = 0;
 
@@ -35,33 +35,36 @@ void setup() {
 }
 
 void loop() {
-  // ── Reset-Taster (D2) ────────────────────────────────────
-  bool resetNow     = (digitalRead(RESET_BTN) == LOW);
-  bool resetPressed = (resetNow && !resetBtnLast);
-  resetBtnLast = resetNow;
+  uint32_t now = millis();
 
-  if (resetPressed) {
-    uint32_t now = millis();
-    if (resetClickCount == 0) {
-      // Erster Klick: Zeitfenster starten
-      resetClickCount = 1;
-      resetFirstClick = now;
-    } else {
-      // Zweiter Klick: prüfen ob innerhalb 5s
-      if (now - resetFirstClick <= RESET_WINDOW_MS) {
-        // Doppelklick erkannt → Spiel neu starten
-        gm.resetCurrentGame();
-        resetClickCount = 0;
-      } else {
-        // Fenster abgelaufen: neu beginnen
-        resetClickCount = 1;
-        resetFirstClick = now;
-      }
+  // ── Reset-Taster D2 mit Entprellung ──────────────────────
+  bool resetRaw = (digitalRead(RESET_BTN) == LOW);
+  if (resetRaw != resetBtnLast) {
+    resetDebounceMs = now;       // Flanke erkannt, Timer neu starten
+    resetBtnLast = resetRaw;
+  }
+  bool resetPressed = false;
+  if ((now - resetDebounceMs) >= 50) {
+    // Signal ist stabil seit 50ms
+    if (resetRaw && !resetBtnStable) {
+      resetPressed = true;       // stabile steigende Flanke
     }
+    resetBtnStable = resetRaw;
   }
 
-  // Zeitfenster automatisch zurücksetzen wenn abgelaufen
-  if (resetClickCount > 0 && (millis() - resetFirstClick > RESET_WINDOW_MS)) {
+  if (resetPressed) {
+    if (resetClickCount == 0) {
+      resetClickCount = 1;
+      resetFirstClick = now;
+    } else if (now - resetFirstClick <= RESET_WINDOW_MS) {
+      gm.resetCurrentGame();
+      resetClickCount = 0;
+    } else {
+      resetClickCount = 1;
+      resetFirstClick = now;
+    }
+  }
+  if (resetClickCount > 0 && (now - resetFirstClick > RESET_WINDOW_MS)) {
     resetClickCount = 0;
   }
 
@@ -81,7 +84,6 @@ void loop() {
 
   bool moved = false;
   if (dx != 0 || dy != 0) {
-    uint32_t now     = millis();
     uint32_t waitFor = firstMove ? JOY_DELAY_MS : JOY_REPEAT_MS;
     if (lastMoveTime == 0 || now - lastMoveTime >= waitFor) {
       moved        = true;
