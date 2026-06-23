@@ -197,6 +197,55 @@ bool ChessGame::_isValidMoveAntichess(int8_t fr,int8_t fc,int8_t tr,int8_t tc) {
 void ChessGame::handleInput(int8_t dx, int8_t dy, bool btn) {
   if(_gameOver) return;
 
+  // ── Crazyhouse Hand-Modus: Joystick blättert durch Figuren ──
+  if(_mode==3 && _handMode) {
+    // Links/Rechts: andere Figur in der Hand wählen
+    if(dx!=0) {
+      // Nächste/vorherige Figur mit Anzahl > 0 suchen
+      static const uint8_t types[5]={CH_PAWN,CH_ROOK,CH_KNIGHT,CH_BISHOP,CH_QUEEN};
+      int8_t cur=-1;
+      for(uint8_t i=0;i<5;i++) if(types[i]==_handType){cur=i;break;}
+      int8_t next=cur+dx;
+      // Überspringen wenn keine Figur vorhanden
+      for(uint8_t tries=0;tries<5;tries++){
+        if(next<0) next=4;
+        if(next>4) next=0;
+        if(_hand[_turn][next]>0){_handType=types[next];break;}
+        next+=dx;
+      }
+    }
+    // Oben: Hand-Modus abbrechen
+    if(dy==-1) { _handMode=false; return; }
+    // Button: Figur auf Cursor-Position einsetzen
+    if(btn) {
+      if(_board[_cursorR][_cursorC]==CH_EMPTY) {
+        // Bauer darf nicht auf Grundlinie
+        if(_handType==CH_PAWN&&(_cursorR==0||_cursorR==7)) return;
+        uint8_t tidx=_handType-1;
+        if(_hand[_turn][tidx]>0) {
+          _board[_cursorR][_cursorC]=_handType|(_turn?CH_BLACK:0);
+          _hand[_turn][tidx]--;
+          _handMode=false;
+          _epCol=-1; _epRow=-1;
+          if(_isInCheck(1-_turn)) {
+            _checkCount[1-_turn]++;
+            if(_checkCount[1-_turn]>=3) _gameOver=true;
+          }
+          if(!_gameOver) _turn=1-_turn;
+        }
+      }
+    }
+    // Im Hand-Modus Cursor noch bewegen (ohne Button)
+    if(!btn) {
+      if(dy==-1&&_cursorR>0) _cursorR--;
+      if(dy== 1&&_cursorR<7) _cursorR++;
+      if(dx==-1&&_cursorC>0) _cursorC--;
+      if(dx== 1&&_cursorC<7) _cursorC++;
+    }
+    return;
+  }
+
+  // Cursor bewegen (normaler Modus)
   if(dy==-1&&_cursorR>0) _cursorR--;
   if(dy== 1&&_cursorR<7) _cursorR++;
   if(dx==-1&&_cursorC>0) _cursorC--;
@@ -204,34 +253,19 @@ void ChessGame::handleInput(int8_t dx, int8_t dy, bool btn) {
 
   if(!btn) return;
 
-  // ── Crazyhouse: Hand-Modus ────────────────────────────────
+  // ── Crazyhouse: leeres Feld → Hand-Menü öffnen ───────────
   if(_mode==3) {
-    if(_handMode) {
-      // Hand-Typ auswählen: hoch/runter wechselt Figur
-      // Hier: Button toggelt zwischen Hand-Platzierung und normalem Zug
-      // Figur einsetzen auf leerem Feld
-      if(_board[_cursorR][_cursorC]==CH_EMPTY) {
-        uint8_t tidx=_handType-1;  // 0-4
-        if(_hand[_turn][tidx]>0) {
-          uint8_t fig=_handType|(_turn?CH_BLACK:0);
-          // Bauer darf nicht auf Grundlinie
-          if(_handType==CH_PAWN&&(_cursorR==0||_cursorR==7)) return;
-          _board[_cursorR][_cursorC]=fig;
-          _hand[_turn][tidx]--;
-          _handMode=false;
-          _epCol=-1; _epRow=-1;
-          // Three-Check kombiniert mit Crazyhouse
-          if(_mode==3&&_isInCheck(1-_turn)) {
-            _checkCount[1-_turn]++;
-            if(_checkCount[1-_turn]>=3) _gameOver=true;
-          }
-          _turn=1-_turn;
-        }
+    bool hasAny=false;
+    for(uint8_t i=0;i<5;i++) if(_hand[_turn][i]>0){hasAny=true;break;}
+    if(_board[_cursorR][_cursorC]==CH_EMPTY && _selR==-1 && hasAny) {
+      // Erste verfügbare Figur in der Hand als Startauswahl
+      static const uint8_t types[5]={CH_PAWN,CH_ROOK,CH_KNIGHT,CH_BISHOP,CH_QUEEN};
+      for(uint8_t i=0;i<5;i++){
+        if(_hand[_turn][i]>0){_handType=types[i];break;}
       }
+      _handMode=true;
       return;
     }
-    // dy up im Crazyhouse = Hand-Modus öffnen
-    // (wird über separaten Joystick-Pfad behandelt — hier nur Button)
   }
 
   uint8_t fig=_board[_cursorR][_cursorC];
@@ -409,29 +443,100 @@ void ChessGame::_drawField(LEDMatrix& matrix, int8_t r, int8_t c) {
   matrix.setPixel(pixR+fpR,pixC+fpC,figColor);
 }
 
-// Crazyhouse: Hand-Anzeige links vom Brett (Spalten 0-6)
+// Crazyhouse: Hand-Anzeige
+// Normal: kleine Farb-Dots links/rechts vom Brett zeigen was man hat
+// Hand-Modus aktiv: Auswahl-Leiste unten mit Figuren und Anzahl
 void ChessGame::_drawHandUI(LEDMatrix& matrix) {
   static const uint8_t typeOrder[5]={CH_PAWN,CH_ROOK,CH_KNIGHT,CH_BISHOP,CH_QUEEN};
+
+  // ── Immer: kleine Dots neben dem Brett zeigen Figuren in der Hand ──
   for(uint8_t p=0;p<2;p++) {
-    int8_t col=p?25:6;  // Weiß links, Schwarz rechts vom Brett
+    int8_t col = p ? 25 : 6;
     for(uint8_t t=0;t<5;t++) {
-      uint8_t cnt=_hand[p][t];
-      if(cnt==0) continue;
-      // Figur-Farbe
+      if(_hand[p][t]==0) continue;
       uint32_t fc;
       switch(typeOrder[t]) {
-        case CH_PAWN:   fc=p?_color(8)/3:_color(8);  break;
-        case CH_ROOK:   fc=p?_color(9)/3:_color(9);  break;
-        case CH_KNIGHT: fc=p?_color(10)/3:_color(10);break;
-        case CH_BISHOP: fc=p?_color(11)/3:_color(11);break;
-        default:        fc=p?_color(14):_color(12);   break;
+        case CH_PAWN:   fc=_color(8);  break;
+        case CH_ROOK:   fc=_color(9);  break;
+        case CH_KNIGHT: fc=_color(10); break;
+        case CH_BISHOP: fc=_color(11); break;
+        default:        fc=_color(12); break;
       }
-      // Heller wenn ausgewählt
-      if(_handMode&&_turn==p&&_handType==typeOrder[t]) fc=0xFFFFFF;
-      matrix.setPixel(t*3,   col, fc);
-      if(cnt>1) matrix.setPixel(t*3+1, col, fc);
+      if(p==1) fc=(((fc>>16)&0xFF)/3)<<16|(((fc>>8)&0xFF)/3)<<8|((fc&0xFF)/3);
+      matrix.setPixel(t*3, col, fc);
     }
   }
+
+  // ── Hand-Modus aktiv: Auswahl-Menü unten (Zeilen 12-15) ──────────
+  if(!_handMode) return;
+
+  // Hintergrund-Balken
+  for(int8_t r=11;r<16;r++)
+    for(int8_t c=0;c<32;c++)
+      matrix.setPixel(r,c,0x050505);
+
+  // Trennlinie
+  for(int8_t c=0;c<32;c++) matrix.setPixel(11,c,0x303000);
+
+  // Titel-Pixel: zeigt wer dran ist (links)
+  matrix.setPixel(11,0, _turn==0?0xFFFFFF:0x003030);
+
+  // Figuren der aktuellen Hand anzeigen — je 5 Slots bei Spalten 3,9,15,21,27
+  static const int8_t slotCols[5]={3,9,15,21,27};
+  for(uint8_t t=0;t<5;t++) {
+    uint8_t cnt=_hand[_turn][t];
+    bool isSel=(_handType==typeOrder[t]);
+
+    // Slot-Hintergrund
+    uint32_t bg=isSel?0x181808:0x080808;
+    for(int8_t r=12;r<16;r++)
+      for(int8_t c=slotCols[t]-2;c<=slotCols[t]+2;c++)
+        matrix.setPixel(r,c,bg);
+
+    if(cnt==0) {
+      // Leer: dunkles X
+      matrix.setPixel(13,slotCols[t]-1,0x100000);
+      matrix.setPixel(13,slotCols[t]+1,0x100000);
+      matrix.setPixel(14,slotCols[t],  0x100000);
+      continue;
+    }
+
+    // Figur-Farbe
+    uint32_t fc;
+    switch(typeOrder[t]) {
+      case CH_PAWN:   fc=_color(8);  break;
+      case CH_ROOK:   fc=_color(9);  break;
+      case CH_KNIGHT: fc=_color(10); break;
+      case CH_BISHOP: fc=_color(11); break;
+      default:        fc=_color(12); break;
+    }
+    if(!isSel) {
+      // Gedimmt wenn nicht ausgewählt
+      fc=(((fc>>16)&0xFF)/3)<<16|(((fc>>8)&0xFF)/3)<<8|((fc&0xFF)/3);
+    }
+
+    // Figur-Pixel (Zeile 13)
+    matrix.setPixel(13,slotCols[t],fc);
+    // Anzahl-Pixel darunter (Zeile 14-15): 1 Punkt pro Figur
+    for(uint8_t n=0;n<cnt&&n<3;n++)
+      matrix.setPixel(15,slotCols[t]-1+n,isSel?0xAA8800:0x333300);
+
+    // Auswahl-Rahmen
+    if(isSel) {
+      for(int8_t c=slotCols[t]-2;c<=slotCols[t]+2;c++) {
+        matrix.setPixel(12,c,0xAA8800);
+        matrix.setPixel(15,c,0x554400);
+      }
+      matrix.setPixel(13,slotCols[t]-2,0xAA8800);
+      matrix.setPixel(13,slotCols[t]+2,0xAA8800);
+      matrix.setPixel(14,slotCols[t]-2,0xAA8800);
+      matrix.setPixel(14,slotCols[t]+2,0xAA8800);
+    }
+  }
+
+  // Hinweis: Pfeil hoch = abbrechen (rechts außen)
+  matrix.setPixel(13,30,0x200020);
+  matrix.setPixel(12,30,0x300030);
 }
 
 void ChessGame::draw(LEDMatrix& matrix) {
