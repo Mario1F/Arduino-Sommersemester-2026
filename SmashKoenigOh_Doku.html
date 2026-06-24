@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmashKoenigOh — Hardware Doku</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
+
+  :root {
+    --bg:        #0a0c0f;
+    --bg2:       #111418;
+    --bg3:       #181d24;
+    --border:    #1e2832;
+    --accent:    #00cccc;
+    --accent2:   #aa8800;
+    --red:       #cc2200;
+    --green:     #00aa44;
+    --purple:    #8800cc;
+    --text:      #c8d4dc;
+    --text-dim:  #556070;
+    --mono:      'Share Tech Mono', monospace;
+    --sans:      'Rajdhani', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Header ─────────────────────────────────────────────── */
+  header {
+    background: var(--bg2);
+    border-bottom: 2px solid var(--accent);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo-pixels {
+    display: grid;
+    grid-template-columns: repeat(8, 6px);
+    grid-template-rows: repeat(5, 6px);
+    gap: 1px;
+  }
+  .logo-pixels span {
+    border-radius: 1px;
+    background: var(--border);
+  }
+  .logo-pixels span.on { background: var(--accent); box-shadow: 0 0 4px var(--accent); }
+  .logo-pixels span.on2 { background: var(--accent2); box-shadow: 0 0 4px var(--accent2); }
+
+  header h1 {
+    font-family: var(--mono);
+    font-size: 22px;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+  header h1 span { color: var(--accent2); }
+
+  nav {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+  }
+  nav a {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    transition: all .15s;
+    letter-spacing: 1px;
+  }
+  nav a:hover, nav a.active {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(0,204,204,.08);
+  }
+
+  /* ── Layout ──────────────────────────────────────────────── */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 32px;
+  }
+
+  section { display: none; }
+  section.active { display: block; }
+
+  /* ── Section headings ────────────────────────────────────── */
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  h2 {
+    font-family: var(--sans);
+    font-size: 32px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 32px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 28px 0 12px;
+    font-family: var(--mono);
+  }
+
+  /* ── Cards ───────────────────────────────────────────────── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .card h4 {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent2);
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+
+  /* ── Parts list ──────────────────────────────────────────── */
+  .parts-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 14px;
+  }
+  .parts-table th {
+    text-align: left;
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .parts-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .parts-table tr:last-child td { border-bottom: none; }
+  .parts-table .qty {
+    color: var(--accent);
+    text-align: center;
+    font-weight: bold;
+  }
+  .parts-table .name { color: #fff; }
+  .parts-table .note { color: var(--text-dim); font-size: 12px; }
+
+  /* ── Wiring diagram ──────────────────────────────────────── */
+  .wiring-container {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 800px) { .wiring-container { grid-template-columns: 1fr; } }
+
+  /* Arduino SVG diagram */
+  #arduino-diagram {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    width: 100%;
+  }
+
+  /* ── Pin connection table ────────────────────────────────── */
+  .pin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .pin-table th {
+    text-align: left;
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .pin-table td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.04); }
+  .pin-table tr:hover td { background: rgba(255,255,255,.02); }
+
+  .pin-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
+    font-family: var(--mono);
+  }
+  .pin-digital { background: rgba(0,170,68,.2);  color: #00dd55; border: 1px solid #00aa44; }
+  .pin-analog  { background: rgba(170,136,0,.2);  color: #ddaa00; border: 1px solid #aa8800; }
+  .pin-power   { background: rgba(200,50,50,.2);  color: #ff6644; border: 1px solid #cc3322; }
+  .pin-gnd     { background: rgba(80,80,80,.3);   color: #aaaaaa; border: 1px solid #555; }
+
+  .wire-color {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    box-shadow: 0 0 4px currentColor;
+  }
+
+  /* ── LED Matrix visual ───────────────────────────────────── */
+  #matrix-preview {
+    display: grid;
+    grid-template-columns: repeat(32, 1fr);
+    gap: 1px;
+    background: #000;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    padding: 8px;
+    margin: 24px 0;
+    cursor: crosshair;
+  }
+  .led {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #0a0a0a;
+    transition: background .1s;
+  }
+  .led.on-r  { background: #ff2200; box-shadow: 0 0 3px #ff2200; }
+  .led.on-g  { background: #00ff00; box-shadow: 0 0 3px #00ff00; }
+  .led.on-b  { background: #0044ff; box-shadow: 0 0 3px #0044ff; }
+  .led.on-w  { background: #ffffff; box-shadow: 0 0 3px #ffffff; }
+  .led.on-c  { background: #00cccc; box-shadow: 0 0 3px #00cccc; }
+  .led.on-y  { background: #ffcc00; box-shadow: 0 0 3px #ffcc00; }
+  .led.on-p  { background: #aa00cc; box-shadow: 0 0 3px #aa00cc; }
+
+  .matrix-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  /* ── Code blocks ─────────────────────────────────────────── */
+  pre {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 16px 20px;
+    font-family: var(--mono);
+    font-size: 13px;
+    overflow-x: auto;
+    margin: 12px 0;
+    line-height: 1.7;
+  }
+  .kw  { color: #7ec8e3; }
+  .cm  { color: var(--text-dim); font-style: italic; }
+  .num { color: var(--accent2); }
+  .str { color: #a8cc8c; }
+
+  /* ── Games overview ──────────────────────────────────────── */
+  .game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .game-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    transition: border-color .2s;
+  }
+  .game-card:hover { border-color: var(--accent); }
+  .game-card .game-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+  .game-card h4 {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .game-card p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    margin-top: 8px;
+    background: rgba(0,204,204,.12);
+    color: var(--accent);
+    border: 1px solid rgba(0,204,204,.25);
+  }
+
+  /* ── Controls table ──────────────────────────────────────── */
+  .controls-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 20px;
+    font-family: var(--mono);
+    font-size: 14px;
+    align-items: center;
+  }
+  .ctrl-key {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-bottom: 3px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 10px;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+  .ctrl-desc { color: var(--text); }
+
+  /* ── Status badge ────────────────────────────────────────── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    margin-left: 10px;
+  }
+  .badge-ok  { background: rgba(0,170,68,.15); color: #00dd55; border: 1px solid #00aa44; }
+  .badge-wip { background: rgba(170,136,0,.15); color: #ddaa00; border: 1px solid #aa8800; }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* ── Scoreboard placeholder ──────────────────────────────── */
+  .placeholder-box {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 60px 40px;
+    text-align: center;
+    color: var(--text-dim);
+  }
+  .placeholder-box .icon { font-size: 48px; margin-bottom: 16px; opacity: .4; }
+  .placeholder-box h3 { color: var(--text-dim); font-size: 20px; margin-bottom: 8px; }
+
+  /* ── Footer ──────────────────────────────────────────────── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 32px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 60px;
+  }
+
+  /* ── Tooltip ─────────────────────────────────────────────── */
+  [data-tip] { position: relative; cursor: help; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg3);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  /* ── Strip visualizer ────────────────────────────────────── */
+  .strip-info {
+    display: flex;
+    gap: 16px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+  }
+  .strip-box {
+    flex: 1;
+    min-width: 200px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+  }
+  .strip-box .strip-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .strip-box .strip-val {
+    font-family: var(--mono);
+    font-size: 20px;
+    color: #fff;
+  }
+  .strip-box .strip-val span { color: var(--accent); font-size: 14px; margin-left: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-pixels" id="logoPx"></div>
+  <h1>Smash<span>Koenig</span>Oh</h1>
+  <nav>
+    <a href="#" class="active" onclick="showSection('hardware',this)">Hardware</a>
+    <a href="#" onclick="showSection('wiring',this)">Anschluss</a>
+    <a href="#" onclick="showSection('games',this)">Spiele</a>
+    <a href="#" onclick="showSection('controls',this)">Steuerung</a>
+    <a href="#" onclick="showSection('scoreboard',this)">Scoreboard</a>
+  </nav>
+</header>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     HARDWARE
+═══════════════════════════════════════════════════════════ -->
+<section id="hardware" class="active">
+  <p class="section-title">// hardware_overview</p>
+  <h2>Komponenten</h2>
+
+  <table class="parts-table">
+    <thead>
+      <tr>
+        <th>QTY</th>
+        <th>Bauteil</th>
+        <th>Bezeichnung</th>
+        <th>Hinweis</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="qty">1×</td>
+        <td class="name">Arduino Uno R3</td>
+        <td>ATmega328P, 16 MHz</td>
+        <td class="note">2KB RAM · 32KB Flash</td>
+      </tr>
+      <tr>
+        <td class="qty">2×</td>
+        <td class="name">WS2812B LED Strip</td>
+        <td>8×32 NeoPixel, 5V</td>
+        <td class="note">Zwei Streifen à 256 LEDs = 512 LEDs gesamt</td>
+      </tr>
+      <tr>
+        <td class="qty">1×</td>
+        <td class="name">KY-023 Joystick</td>
+        <td>Dual-Axis + Taster</td>
+        <td class="note">Analog A0/A1, Digital D7</td>
+      </tr>
+      <tr>
+        <td class="qty">1×</td>
+        <td class="name">Taster (Reset)</td>
+        <td>Drucktaster NO</td>
+        <td class="note">D2 → GND · Doppelklick in 3s = Reset</td>
+      </tr>
+      <tr>
+        <td class="qty">1×</td>
+        <td class="name">Kondensator</td>
+        <td>1000 µF / 6.3V</td>
+        <td class="note">Zwischen 5V und GND der LED-Versorgung</td>
+      </tr>
+      <tr>
+        <td class="qty">1×</td>
+        <td class="name">Widerstand</td>
+        <td>470 Ω</td>
+        <td class="note">In der Daten-Leitung zu den LEDs (D6)</td>
+      </tr>
+      <tr>
+        <td class="qty">1×</td>
+        <td class="name">Netzteil</td>
+        <td>5V / mind. 3A</td>
+        <td class="note">512 LEDs × 60mA (max) = 30A (max) → dimmen!</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>// led_matrix_layout</h3>
+  <p style="margin-bottom:12px;color:var(--text-dim);font-size:14px;">
+    Zwei 8×32 Streifen übereinander ergeben eine 16×32 Matrix. Streifen 1 (Zeilen 0–7) beginnt oben-links,
+    Streifen 2 (Zeilen 8–15) ist gespiegelt (beginnt unten-rechts). Beide nutzen Serpentinen/Zickzack-Indexierung.
+  </p>
+
+  <div class="matrix-label">
+    <span>Spalte 0</span><span>Spalte 15</span><span>Spalte 31</span>
+  </div>
+  <div id="matrix-preview"></div>
+  <p style="font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-top:4px;">
+    Klick auf Matrix = Demo-Muster ·
+    <span style="color:var(--accent)">■</span> Strip 1 (Zeilen 0–7) ·
+    <span style="color:var(--accent2)">■</span> Strip 2 (Zeilen 8–15)
+  </p>
+
+  <div class="strip-info">
+    <div class="strip-box">
+      <div class="strip-label">GESAMT LEDS</div>
+      <div class="strip-val">512 <span>LEDs</span></div>
+    </div>
+    <div class="strip-box">
+      <div class="strip-label">MATRIX</div>
+      <div class="strip-val">16×32 <span>Pixel</span></div>
+    </div>
+    <div class="strip-box">
+      <div class="strip-label">DATEN-PIN</div>
+      <div class="strip-val">D6</div>
+    </div>
+    <div class="strip-box">
+      <div class="strip-label">HELLIGKEIT (Standard)</div>
+      <div class="strip-val">20 <span>/ 255</span></div>
+    </div>
+    <div class="strip-box">
+      <div class="strip-label">RAM (LED-Buffer)</div>
+      <div class="strip-val">1536 <span>Bytes</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     WIRING
+═══════════════════════════════════════════════════════════ -->
+<section id="wiring">
+  <p class="section-title">// wiring_diagram</p>
+  <h2>Anschluss</h2>
+
+  <div class="wiring-container">
+    <div>
+      <h3>// pin_belegung</h3>
+      <table class="pin-table">
+        <thead>
+          <tr>
+            <th>Arduino Pin</th>
+            <th>Verbunden mit</th>
+            <th>Kabelfarbe</th>
+            <th>Hinweis</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="pin-badge pin-digital">D6</span></td>
+            <td>LED Strip — DATA IN</td>
+            <td><span class="wire-color" style="color:#00ff88;background:#00ff88"></span>grün</td>
+            <td style="font-size:12px;color:var(--text-dim)">470Ω Widerstand in Serie</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge pin-digital">D7</span></td>
+            <td>KY-023 — SW (Button)</td>
+            <td><span class="wire-color" style="color:#ffff00;background:#ffff00"></span>gelb</td>
+            <td style="font-size:12px;color:var(--text-dim)">INPUT_PULLUP · LOW = gedrückt</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge pin-digital">D2</span></td>
+            <td>Reset-Taster</td>
+            <td><span class="wire-color" style="color:#ff6644;background:#ff6644"></span>orange</td>
+            <td style="font-size:12px;color:var(--text-dim)">INPUT_PULLUP · gegen GND · Doppelklick = Reset</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge pin-analog">A0</span></td>
+            <td>KY-023 — VRx</td>
+            <td><span class="wire-color" style="color:#aaaaff;background:#aaaaff"></span>blau</td>
+            <td style="font-size:12px;color:var(--text-dim)">X-Achse (links/rechts)</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge pin-analog">A1</span></td>
+            <td>KY-023 — VRy</td>
+            <td><span class="wire-color" style="color:#cc88ff;background:#cc88ff"></span>lila</td>
+            <td style="font-size:12px;color:var(--text-dim)">Y-Achse (hoch/runter)</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge pin-power">5V</span></td>
+            <td>KY-023 — VCC</td>
+            <td><span class="wire-color" style="color:#ff4444;background:#ff4444"></span>rot</td>
+            <td style="font-size:12px;color:var(--text-dim)">Joystick Versorgung</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge pin-gnd">GND</span></td>
+            <td>KY-023 — GND</td>
+            <td><span class="wire-color" style="color:#555;background:#555"></span>schwarz</td>
+            <td style="font-size:12px;color:var(--text-dim)"></td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge pin-gnd">GND</span></td>
+            <td>Reset-Taster (2. Bein)</td>
+            <td><span class="wire-color" style="color:#555;background:#555"></span>schwarz</td>
+            <td style="font-size:12px;color:var(--text-dim)">Taster gegen GND schalten</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge pin-power">Ext. 5V</span></td>
+            <td>LED Strip — 5V</td>
+            <td><span class="wire-color" style="color:#ff4444;background:#ff4444"></span>rot</td>
+            <td style="font-size:12px;color:var(--text-dim)">Externes Netzteil! Nicht Arduino-5V</td>
+          </tr>
+          <tr>
+            <td><span class="pin-badge pin-gnd">Ext. GND</span></td>
+            <td>LED Strip — GND</td>
+            <td><span class="wire-color" style="color:#555;background:#555"></span>schwarz</td>
+            <td style="font-size:12px;color:var(--text-dim)">GND mit Arduino verbinden!</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>// wichtige_hinweise</h3>
+      <div class="card">
+        <h4>⚡ STROMVERSORGUNG</h4>
+        <p style="font-size:14px;margin-bottom:8px;">
+          Die LEDs dürfen <strong style="color:#fff">nicht</strong> über den Arduino 5V-Pin versorgt werden.
+          Bei voller Helligkeit brauchen 512 WS2812B bis zu 30A — das verbrennt den Arduino sofort.
+        </p>
+        <p style="font-size:14px;">
+          → Externes 5V Netzteil direkt an die Lötpads des Strips.<br>
+          → GND des Netzteils mit Arduino GND verbinden (gemeinsame Masse).<br>
+          → 1000µF Kondensator zwischen 5V und GND des Netzteils.
+        </p>
+      </div>
+      <div class="card">
+        <h4>📡 DATEN-LEITUNG</h4>
+        <p style="font-size:14px;">
+          470Ω Widerstand direkt am Arduino-Pin D6, so nah wie möglich am Pin.
+          Schützt vor Reflexionen und Überspannungen. Beide Strips werden in Serie geschalten —
+          DATA OUT von Strip 1 geht in DATA IN von Strip 2.
+        </p>
+      </div>
+      <div class="card">
+        <h4>🔄 RESET-TASTER</h4>
+        <p style="font-size:14px;">
+          Taster zwischen D2 und GND. INPUT_PULLUP hält D2 auf HIGH.
+          Beim Drücken → LOW. <strong style="color:#fff">Doppelklick in 3 Sekunden</strong> = aktuelles Spiel neu starten.
+          Im Menü hat der Reset keine Funktion.
+        </p>
+      </div>
+    </div>
+
+    <div>
+      <h3>// schaltplan</h3>
+      <svg id="arduino-diagram" viewBox="0 0 280 480" xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;background:#0d1117;border-radius:6px;">
+
+        <!-- Arduino Board -->
+        <rect x="60" y="60" width="160" height="320" rx="8" fill="#1a2535" stroke="#2a4060" stroke-width="2"/>
+        <text x="140" y="85" text-anchor="middle" fill="#334455" font-family="monospace" font-size="9">ARDUINO UNO</text>
+
+        <!-- USB -->
+        <rect x="60" y="70" width="30" height="20" rx="2" fill="#2a3a4a" stroke="#3a5060"/>
+        <text x="75" y="83" text-anchor="middle" fill="#445566" font-family="monospace" font-size="7">USB</text>
+
+        <!-- Digital pins right side -->
+        <g fill="#1e4a2a" stroke="#2a7040">
+          <!-- D2 -->
+          <rect x="200" y="110" width="20" height="10" rx="2"/>
+          <text x="198" y="118" text-anchor="end" fill="#00aa44" font-family="monospace" font-size="8">D2</text>
+          <!-- D6 -->
+          <rect x="200" y="150" width="20" height="10" rx="2"/>
+          <text x="198" y="158" text-anchor="end" fill="#00aa44" font-family="monospace" font-size="8">D6</text>
+          <!-- D7 -->
+          <rect x="200" y="165" width="20" height="10" rx="2"/>
+          <text x="198" y="173" text-anchor="end" fill="#00aa44" font-family="monospace" font-size="8">D7</text>
+        </g>
+
+        <!-- Analog pins left side -->
+        <g fill="#4a3a00" stroke="#806000">
+          <rect x="60" y="110" width="20" height="10" rx="2"/>
+          <text x="82" y="118" fill="#ddaa00" font-family="monospace" font-size="8">A0</text>
+          <rect x="60" y="125" width="20" height="10" rx="2"/>
+          <text x="82" y="133" fill="#ddaa00" font-family="monospace" font-size="8">A1</text>
+        </g>
+
+        <!-- Power pins -->
+        <g fill="#4a1010" stroke="#802020">
+          <rect x="60" y="300" width="20" height="10" rx="2"/>
+          <text x="82" y="308" fill="#ff6644" font-family="monospace" font-size="8">5V</text>
+          <rect x="60" y="315" width="20" height="10" rx="2"/>
+          <text x="82" y="323" fill="#888888" font-family="monospace" font-size="8">GND</text>
+          <rect x="60" y="330" width="20" height="10" rx="2"/>
+          <text x="82" y="338" fill="#888888" font-family="monospace" font-size="8">GND</text>
+        </g>
+
+        <!-- LED Strip -->
+        <rect x="10" y="180" width="40" height="80" rx="4" fill="#0a1a0a" stroke="#00cc44" stroke-width="1.5"/>
+        <text x="30" y="200" text-anchor="middle" fill="#00cc44" font-family="monospace" font-size="7">LED</text>
+        <text x="30" y="210" text-anchor="middle" fill="#00cc44" font-family="monospace" font-size="7">STRIP</text>
+        <text x="30" y="222" text-anchor="middle" fill="#006622" font-family="monospace" font-size="6">WS2812B</text>
+        <!-- LED dots -->
+        <circle cx="20" cy="235" r="3" fill="#ff0000" opacity=".7"/>
+        <circle cx="28" cy="235" r="3" fill="#00ff00" opacity=".7"/>
+        <circle cx="36" cy="235" r="3" fill="#0000ff" opacity=".7"/>
+        <circle cx="44" cy="235" r="3" fill="#ffffff" opacity=".5"/>
+
+        <!-- 470R resistor on D6 line -->
+        <rect x="32" y="152" width="16" height="6" rx="2" fill="#3a2a10" stroke="#aa7700"/>
+        <text x="40" y="158" text-anchor="middle" fill="#aa7700" font-family="monospace" font-size="6">470Ω</text>
+
+        <!-- Wires: D6 → 470Ω → LED DATA -->
+        <polyline points="220,155 255,155 255,155 255,155" stroke="#00ff88" stroke-width="1.5" fill="none" opacity=".3"/>
+        <line x1="220" y1="155" x2="250" y2="155" stroke="#00ff88" stroke-width="1.5"/>
+        <line x1="250" y1="155" x2="250" y2="220" stroke="#00ff88" stroke-width="1.5"/>
+        <line x1="250" y1="220" x2="50" y2="220" stroke="#00ff88" stroke-width="1.5"/>
+        <line x1="50" y1="220" x2="50" y2="158" stroke="#00ff88" stroke-width="1.5"/>
+        <line x1="50" y1="158" x2="48" y2="158" stroke="#00ff88" stroke-width="1.5"/>
+
+        <!-- KY-023 Joystick -->
+        <rect x="10" y="90" width="40" height="50" rx="4" fill="#1a1a0a" stroke="#aa8800" stroke-width="1.5"/>
+        <text x="30" y="108" text-anchor="middle" fill="#aa8800" font-family="monospace" font-size="7">KY-023</text>
+        <circle cx="30" cy="125" r="8" fill="#2a2a1a" stroke="#887700"/>
+        <circle cx="30" cy="125" r="3" fill="#665500"/>
+
+        <!-- Wires: A0, A1 to joystick -->
+        <line x1="60" y1="115" x2="50" y2="115" stroke="#aaaaff" stroke-width="1.5"/>
+        <line x1="60" y1="130" x2="50" y2="130" stroke="#cc88ff" stroke-width="1.5"/>
+        <!-- 5V to joystick -->
+        <line x1="60" y1="305" x2="55" y2="305" stroke="#ff4444" stroke-width="1.5" stroke-dasharray="2,2"/>
+        <line x1="55" y1="305" x2="55" y2="100" stroke="#ff4444" stroke-width="1.5" stroke-dasharray="2,2"/>
+        <line x1="55" y1="100" x2="50" y2="100" stroke="#ff4444" stroke-width="1.5" stroke-dasharray="2,2"/>
+
+        <!-- Reset button -->
+        <rect x="10" y="370" width="40" height="30" rx="4" fill="#1a0a0a" stroke="#cc4422" stroke-width="1.5"/>
+        <text x="30" y="386" text-anchor="middle" fill="#cc4422" font-family="monospace" font-size="7">RESET</text>
+        <text x="30" y="395" text-anchor="middle" fill="#cc4422" font-family="monospace" font-size="7">BTN</text>
+
+        <!-- D2 to reset btn -->
+        <line x1="220" y1="115" x2="255" y2="115" stroke="#ff6644" stroke-width="1.5"/>
+        <line x1="255" y1="115" x2="255" y2="385" stroke="#ff6644" stroke-width="1.5"/>
+        <line x1="255" y1="385" x2="50" y2="385" stroke="#ff6644" stroke-width="1.5"/>
+
+        <!-- GND to reset btn -->
+        <line x1="60" y1="335" x2="56" y2="335" stroke="#555" stroke-width="1.5"/>
+        <line x1="56" y1="335" x2="56" y2="393" stroke="#555" stroke-width="1.5"/>
+        <line x1="56" y1="393" x2="50" y2="393" stroke="#555" stroke-width="1.5"/>
+
+        <!-- D7 to joystick SW -->
+        <line x1="220" y1="170" x2="260" y2="170" stroke="#ffff00" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <line x1="260" y1="170" x2="260" y2="138" stroke="#ffff00" stroke-width="1.5" stroke-dasharray="3,2"/>
+        <line x1="260" y1="138" x2="50" y2="138" stroke="#ffff00" stroke-width="1.5" stroke-dasharray="3,2"/>
+
+        <!-- Ext power label -->
+        <text x="140" y="420" text-anchor="middle" fill="#ff4444" font-family="monospace" font-size="9">EXT. 5V NETZTEIL</text>
+        <text x="140" y="432" text-anchor="middle" fill="#555" font-family="monospace" font-size="8">→ LED Strip (direkt)</text>
+
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     GAMES
+═══════════════════════════════════════════════════════════ -->
+<section id="games">
+  <p class="section-title">// game_library</p>
+  <h2>Spiele</h2>
+
+  <div class="game-grid">
+    <div class="game-card">
+      <div class="game-icon">⬜⬛</div>
+      <h4>Meta-Tic-Tac-Toe</h4>
+      <p>9 Mini-TicTacToe-Felder. Man muss den Gegner ins richtige Feld schicken.</p>
+      <span class="tag">2 Spieler</span>
+    </div>
+    <div class="game-card">
+      <div class="game-icon">🟦</div>
+      <h4>Tetris</h4>
+      <p>7-Bag Randomizer. Game Over erst wenn das Feld wirklich voll ist.</p>
+      <span class="tag">1 Spieler</span>
+    </div>
+    <div class="game-card">
+      <div class="game-icon">♟️</div>
+      <h4>Chess — Normal</h4>
+      <p>Schach mit En passant, Rochade, Bauer-Promotion.</p>
+      <span class="tag">2 Spieler</span>
+    </div>
+    <div class="game-card">
+      <div class="game-icon">❌</div>
+      <h4>Antichess</h4>
+      <p>Schlagen ist Pflicht. Wer zuerst alle Figuren verliert, gewinnt.</p>
+      <span class="tag">2 Spieler</span>
+    </div>
+    <div class="game-card">
+      <div class="game-icon">3️⃣</div>
+      <h4>Three-Check</h4>
+      <p>Wer den König 3× in Schach setzt, gewinnt sofort.</p>
+      <span class="tag">2 Spieler</span>
+    </div>
+    <div class="game-card">
+      <div class="game-icon">🔄</div>
+      <h4>Crazyhouse</h4>
+      <p>Geschlagene Figuren darf man selbst wieder einsetzen. Button auf leerem Feld = Hand-Menü.</p>
+      <span class="tag">2 Spieler</span>
+    </div>
+    <div class="game-card">
+      <div class="game-icon">🟩</div>
+      <h4>Block Puzzle</h4>
+      <p>Block aus Queue wählen, ins Feld ziehen, volle Zeilen/Spalten löschen.</p>
+      <span class="tag">1 Spieler</span>
+    </div>
+    <div class="game-card">
+      <div class="game-icon">🐍</div>
+      <h4>Snake</h4>
+      <p>3–5 Äpfel gleichzeitig. Oben/unten = Wrap. Wände links/rechts = Tod.</p>
+      <span class="tag">1 Spieler</span>
+    </div>
+  </div>
+
+  <h3>// speicher_übersicht</h3>
+  <div class="card">
+    <h4>RAM UNION BUFFER</h4>
+    <p style="font-family:var(--mono);font-size:13px;color:var(--text-dim);margin-bottom:12px;">
+      Nur ein Spiel belegt RAM gleichzeitig (Union-Pattern). Größtes Spiel bestimmt Union-Größe.
+    </p>
+    <pre><span class="cm">// Ungefähre RAM-Nutzung pro Spiel:</span>
+SnakeGame     ~<span class="num">151</span> Bytes  <span class="cm">← größter Member → Union-Größe</span>
+MetaGame      ~<span class="num">110</span> Bytes
+ChessGame     ~<span class="num"> 92</span> Bytes  <span class="cm">(inkl. Crazyhouse-Hand)</span>
+TetrisGame    ~<span class="num"> 61</span> Bytes
+BlockPuzzle   ~<span class="num"> 23</span> Bytes
+<span class="cm">────────────────────────────────────────</span>
+LED-Buffer    <span class="num">1536</span> Bytes  <span class="cm">(512 LEDs × 3 Byte)</span>
+Stack + rest  ~<span class="num"> 350</span> Bytes
+Frei          ~<span class="num"> 350</span> Bytes  <span class="cm">↑ Sicherheitspuffer</span></pre>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     CONTROLS
+═══════════════════════════════════════════════════════════ -->
+<section id="controls">
+  <p class="section-title">// steuerung</p>
+  <h2>Steuerung</h2>
+
+  <div class="card-grid">
+    <div class="card">
+      <h4>MENÜ</h4>
+      <div class="controls-grid">
+        <span class="ctrl-key">◀ ▶</span><span class="ctrl-desc">Spiel auswählen (scrollt)</span>
+        <span class="ctrl-key">BTN</span><span class="ctrl-desc">Spiel starten</span>
+      </div>
+    </div>
+    <div class="card">
+      <h4>SNAKE</h4>
+      <div class="controls-grid">
+        <span class="ctrl-key">◀▲▼▶</span><span class="ctrl-desc">Richtung ändern</span>
+        <span class="ctrl-key">◀ ▶</span><span class="ctrl-desc">Wand links/rechts = Tod</span>
+        <span class="ctrl-key">▲ ▼</span><span class="ctrl-desc">Oben/unten = Wrap</span>
+      </div>
+    </div>
+    <div class="card">
+      <h4>TETRIS</h4>
+      <div class="controls-grid">
+        <span class="ctrl-key">◀ ▶</span><span class="ctrl-desc">Block schieben</span>
+        <span class="ctrl-key">▼</span><span class="ctrl-desc">Schnell fallen</span>
+        <span class="ctrl-key">BTN</span><span class="ctrl-desc">Rotieren</span>
+      </div>
+    </div>
+    <div class="card">
+      <h4>SCHACH (alle Varianten)</h4>
+      <div class="controls-grid">
+        <span class="ctrl-key">◀▲▼▶</span><span class="ctrl-desc">Cursor bewegen</span>
+        <span class="ctrl-key">BTN</span><span class="ctrl-desc">Figur wählen / Zug ausführen</span>
+        <span class="ctrl-key">BTN (leer)</span><span class="ctrl-desc">Crazyhouse: Hand-Menü öffnen</span>
+        <span class="ctrl-key">▲ (Hand)</span><span class="ctrl-desc">Hand-Menü abbrechen</span>
+      </div>
+    </div>
+    <div class="card">
+      <h4>BLOCK PUZZLE</h4>
+      <div class="controls-grid">
+        <span class="ctrl-key">◀ ▶</span><span class="ctrl-desc">Block in Queue wählen</span>
+        <span class="ctrl-key">BTN</span><span class="ctrl-desc">Block nehmen / ablegen</span>
+        <span class="ctrl-key">◀▲▼▶</span><span class="ctrl-desc">Block im Feld positionieren</span>
+      </div>
+    </div>
+    <div class="card">
+      <h4>RESET-TASTER D2</h4>
+      <div class="controls-grid">
+        <span class="ctrl-key">2× Klick</span><span class="ctrl-desc">Aktuelles Spiel neu starten</span>
+        <span class="ctrl-key">&lt; 3s</span><span class="ctrl-desc">Fenster für Doppelklick</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCOREBOARD (Platzhalter)
+═══════════════════════════════════════════════════════════ -->
+<section id="scoreboard">
+  <p class="section-title">// scoreboard</p>
+  <h2>Scoreboard <span class="badge badge-wip">IN PLANUNG</span></h2>
+
+  <div class="placeholder-box">
+    <div class="icon">🏆</div>
+    <h3>Scoreboard kommt bald</h3>
+    <p style="margin-top:8px;font-size:14px;">
+      Hier werden Highscores und Spieler-Statistiken angezeigt.<br>
+      Geplante Hardware-Erweiterung: RFID-Leser (MFRC522) für Spieler-Erkennung.
+    </p>
+  </div>
+
+  <h3>// geplante_features</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>RFID SPIELER-ERKENNUNG</h4>
+      <p style="font-size:14px;color:var(--text-dim);">
+        MFRC522 Modul bereits vorhanden. Jeder Spieler scannt seine Karte →
+        Score wird zugeordnet. Verbindung über SPI (D10–D13).
+      </p>
+    </div>
+    <div class="card">
+      <h4>PERSISTENZ</h4>
+      <p style="font-size:14px;color:var(--text-dim);">
+        Arduino EEPROM hat 1024 Bytes — reicht für ~20 Einträge
+        (Name 8 Byte + Score 2 Byte = 10 Byte/Eintrag).
+      </p>
+    </div>
+    <div class="card">
+      <h4>ANZEIGE</h4>
+      <p style="font-size:14px;color:var(--text-dim);">
+        Scrollende Highscore-Liste auf der LED-Matrix, direkt nach dem Spielende.
+        Pro Spiel eigene Bestenliste.
+      </p>
+    </div>
+  </div>
+
+  <h3>// rfid_anschluss (vorbereitet)</h3>
+  <table class="pin-table">
+    <thead>
+      <tr><th>MFRC522 Pin</th><th>Arduino Pin</th><th>Hinweis</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>SDA (SS)</td><td><span class="pin-badge pin-digital">D10</span></td><td style="font-size:12px;color:var(--text-dim)">Chip Select</td></tr>
+      <tr><td>SCK</td><td><span class="pin-badge pin-digital">D13</span></td><td style="font-size:12px;color:var(--text-dim)">SPI Clock</td></tr>
+      <tr><td>MOSI</td><td><span class="pin-badge pin-digital">D11</span></td><td style="font-size:12px;color:var(--text-dim)">SPI Data Out</td></tr>
+      <tr><td>MISO</td><td><span class="pin-badge pin-digital">D12</span></td><td style="font-size:12px;color:var(--text-dim)">SPI Data In</td></tr>
+      <tr><td>RST</td><td><span class="pin-badge pin-digital">D9</span></td><td style="font-size:12px;color:var(--text-dim)">Reset</td></tr>
+      <tr><td>3.3V</td><td><span class="pin-badge pin-power" style="background:rgba(100,150,200,.2);color:#88bbff;border-color:#4477aa">3.3V</span></td><td style="font-size:12px;color:var(--text-dim)">Nicht 5V! Modul läuft auf 3.3V</td></tr>
+      <tr><td>GND</td><td><span class="pin-badge pin-gnd">GND</span></td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+</main>
+
+<footer>
+  <span>SmashKoenigOh · Arduino Uno · 16×32 WS2812B</span>
+  <span style="color:var(--accent)">v2.0 — 8 Spiele</span>
+</footer>
+
+<script>
+// ── Navigation ────────────────────────────────────────────────
+function showSection(id, link) {
+  document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  link.classList.add('active');
+  window.scrollTo(0, 0);
+  return false;
+}
+
+// ── Logo Pixel-Animation ──────────────────────────────────────
+(function() {
+  const px = document.getElementById('logoPx');
+  const pattern = [
+    1,0,1,0,1,0,1,0,
+    1,1,0,0,1,1,0,0,
+    0,1,0,1,0,1,0,1,
+    1,1,0,0,0,0,1,1,
+    1,0,1,0,1,0,1,0,
+  ];
+  pattern.forEach((on, i) => {
+    const s = document.createElement('span');
+    if (on) s.className = i % 3 === 0 ? 'on2' : 'on';
+    px.appendChild(s);
+  });
+})();
+
+// ── LED Matrix Preview ────────────────────────────────────────
+(function() {
+  const matrix = document.getElementById('matrix-preview');
+  const ROWS = 16, COLS = 32;
+  const leds = [];
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const d = document.createElement('div');
+      d.className = 'led';
+      matrix.appendChild(d);
+      leds.push(d);
+    }
+  }
+
+  function setLed(r, c, cls) {
+    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
+    leds[r * COLS + c].className = 'led ' + cls;
+  }
+  function clearAll() {
+    leds.forEach(l => l.className = 'led');
+  }
+
+  // Serpentinen-Index wie in der Hardware
+  function getLedIndex(row, col) {
+    if (row < 8) {
+      return col % 2 === 0 ? col * 8 + row : col * 8 + (7 - row);
+    } else {
+      const lr = row - 8, fc = 31 - col;
+      return 256 + (fc % 2 === 0 ? fc * 8 + (7 - lr) : fc * 8 + lr);
+    }
+  }
+
+  let demoMode = 0;
+  const demos = [
+    // Demo 0: Serpentinen zeigen
+    function() {
+      clearAll();
+      for (let r = 0; r < 16; r++)
+        for (let c = 0; c < 32; c++) {
+          const cls = r < 8 ? 'on-c' : 'on-y';
+          setLed(r, c, cls);
+        }
+    },
+    // Demo 1: Snake
+    function() {
+      clearAll();
+      const snake = [[7,15],[7,14],[7,13],[7,12],[7,11]];
+      snake.forEach((p,i) => setLed(p[0], p[1], i===0?'on-g':'on-g'));
+      setLed(5, 20, 'on-r');
+      setLed(3, 8, 'on-r');
+      setLed(11, 25, 'on-r');
+      // Wände
+      for (let r=0;r<16;r++) { setLed(r,0,'on-w'); setLed(r,31,'on-w'); }
+    },
+    // Demo 2: Tetris
+    function() {
+      clearAll();
+      // Boden
+      for (let c=10;c<22;c++) setLed(15,c,'on-c');
+      for (let c=10;c<22;c++) setLed(14,c,'on-b');
+      // Aktives Stück (T)
+      setLed(5,15,'on-p'); setLed(6,14,'on-p'); setLed(6,15,'on-p'); setLed(6,16,'on-p');
+      // Rand
+      for (let r=0;r<16;r++) { setLed(r,9,'on-w'); setLed(r,22,'on-w'); }
+    },
+    // Demo 3: Schach
+    function() {
+      clearAll();
+      for (let r=0;r<8;r++) for (let c=0;c<8;c++) {
+        const light = (r+c)%2===0;
+        setLed(r*2, 8+c*2, light?'on-y':'led');
+        setLed(r*2+1, 8+c*2, light?'on-y':'led');
+        setLed(r*2, 8+c*2+1, light?'on-y':'led');
+        setLed(r*2+1, 8+c*2+1, light?'on-y':'led');
+      }
+    },
+    // Demo 4: Menü
+    function() {
+      clearAll();
+      // Kopfzeile lila
+      for (let c=0;c<32;c++) setLed(0,c,'on-p');
+      // Icons
+      setLed(7,4,'on-p'); setLed(7,12,'on-b'); setLed(7,16,'on-y');
+      setLed(7,20,'on-g'); setLed(7,28,'on-g');
+      // Cursor-Dot
+      setLed(15,16,'on-c');
+    }
+  ];
+
+  matrix.addEventListener('click', function() {
+    demoMode = (demoMode + 1) % demos.length;
+    demos[demoMode]();
+  });
+
+  // Start mit Demo 0
+  demos[0]();
+})();
+</script>
+</body>
+</html>
